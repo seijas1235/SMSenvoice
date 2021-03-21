@@ -1,0 +1,9 @@
+[20-Mar-2021 14:20:28 America/Bogota] PHP Notice:  Undefined index: user_id in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 10
+[20-Mar-2021 14:20:28 America/Bogota] PHP Notice:  Undefined index: user_id in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 18
+[20-Mar-2021 14:20:28 America/Bogota] PHP Notice:  Trying to access array offset on value of type bool in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 155
+[20-Mar-2021 20:43:33 America/Bogota] PHP Notice:  Undefined index: user_id in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 10
+[20-Mar-2021 20:43:33 America/Bogota] PHP Notice:  Undefined index: user_id in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 18
+[20-Mar-2021 20:43:33 America/Bogota] PHP Notice:  Trying to access array offset on value of type bool in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 155
+[20-Mar-2021 20:43:39 America/Bogota] PHP Notice:  Undefined index: user_id in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 10
+[20-Mar-2021 20:43:39 America/Bogota] PHP Notice:  Undefined index: user_id in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 18
+[20-Mar-2021 20:43:39 America/Bogota] PHP Notice:  Trying to access array offset on value of type bool in /home/smsenvoi/public_html/SMS/app/sms-masivos/smsMasivos.php on line 155

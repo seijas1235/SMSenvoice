@@ -1,6 +1,9 @@
 <?php
 session_start();
-
+?>
+<link rel="stylesheet" href="../../../app-assets/css-loader-master/dist/css-loader.css">
+<div id='load' class="loader loader-double is-active"></div>
+<?php
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../../login/login.php');
 }
@@ -455,6 +458,9 @@ if (isset($_GET['id'])) {
                             <div class="card">
                                 <div class="card-header border-bottom">
                                     <h4 class="card-title">Contacto</h4>
+                                    <a href="agregarContactosexcel.php?lis=<?= $idLista; ?>">
+                                        <button type="submit" class="btn btn-primary mr-1">Agregar contactos desde excel</button>
+                                    </a>
                                     <a href="agregarContactos.php?lis=<?= $idLista; ?>">
                                         <button type="submit" class="btn btn-primary mr-1">Agregar contacto</button>
                                     </a>
@@ -527,6 +533,7 @@ if (isset($_GET['id'])) {
                     height: 14
                 });
             }
+            $('.loader').removeClass('is-active');
         });
     </script>
 </body>

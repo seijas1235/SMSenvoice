@@ -1,6 +1,16 @@
 <?php
 session_start();
+?>
+<script src="../../app-assets/vendors/js/extensions/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../app-assets/vendors/css/extensions/sweetalert2.min.css">
 
+<!-- Template files -->
+<link rel="stylesheet" type="text/css" href="../../app-assets/css/plugins/extensions/ext-component-sweet-alerts.css">
+
+<link rel="stylesheet" href="../../app-assets/css-loader-master/dist/css-loader.css">
+<div id='load' class="loader loader-double is-active"></div>
+
+<?php
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../login/login.php');
 }
@@ -568,6 +578,7 @@ function enviarDatos($name, $conn)
                     height: 14
                 });
             }
+            $('.loader').removeClass('is-active');
         });
     </script>
 

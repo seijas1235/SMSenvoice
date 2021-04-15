@@ -1,6 +1,9 @@
 <?php
 session_start();
-
+?>
+<link rel="stylesheet" href="../../../app-assets/css-loader-master/dist/css-loader.css">
+<div id='load' class="loader loader-double is-active"></div>
+<?php
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../../login/login.php');
 }
@@ -1337,6 +1340,7 @@ function celularValidation($celular)
                     width: 14,
                     height: 14
                 });
+                $('.loader').removeClass('is-active');
             }
         });
     </script>

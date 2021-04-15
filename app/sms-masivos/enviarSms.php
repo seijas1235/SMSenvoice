@@ -1,11 +1,38 @@
 <?php
-session_start();
 
+session_start();
+error_reporting(0);
+?>
+<script src="../../app-assets/vendors/js/extensions/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../app-assets/vendors/css/extensions/sweetalert2.min.css">
+
+<!-- Template files -->
+<link rel="stylesheet" type="text/css" href="../../app-assets/css/plugins/extensions/ext-component-sweet-alerts.css">
+
+<link rel="stylesheet" href="../../app-assets/css-loader-master/dist/css-loader.css">
+<div id='load' class="loader loader-double is-active"></div>
+
+<?php
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../login/login.php');
 }
+require '../../vendor/autoload.php';
+use GuzzleHttp\Client;
 
 require '../../partials/db.php';
+$hora = new DateTime("now", new DateTimeZone('America/Bogota'));
+    $hora = $hora->format('H:i');
+    $hora1 = ( "08:00" );
+    $hora2 = ( "20:00" );
+
+    if ($hora<$hora1 || $hora>$hora2) {
+        echo "<script> 
+                localStorage.setItem('error', 'El horario de envio de sms es de 08:00 a 20:00');
+                </script>";
+                $archivoActual = 'smsMasivos.php';
+                header("refresh:0; url= $archivoActual");
+                return false;
+    }
 
 $userId = $_SESSION['user_id'];
 $sql = 'SELECT saldo FROM usuarios WHERE ID=:user_id';
@@ -13,15 +40,25 @@ $stmt = $conn->prepare($sql);
 $stmt->bindParam(':user_id', $userId);
 $stmt->execute();
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
+$saldo=$result['saldo'];
 
 if (isset($_GET['id']) and isset($_GET['m'])) {
+    global $message;
     $lista = $_GET['id'];
     $message_sms = $_GET['m'];
     $costo = calcularCosto($lista, $userId);
     if (isset($_POST['sub'])) {
         if (validarLista($lista, $userId)) {
-            // ENVÍO DE MENSAJE Y ELIMINACION DE SALDO
-            envioMasivo($lista, $message_sms, $userId);
+            if ($saldo<$costo) {
+                echo "<script> 
+                localStorage.setItem('error', 'Su saldo es insuficiente');
+                </script>";
+                $archivoActual = 'smsMasivos.php';
+                header("refresh:0; url= $archivoActual");
+                return false;
+                //header('Location: enviarSms.php');
+            }
+            envioMasivo($lista, $message_sms, $userId,$saldo,$costo);
         } else {
             header('Location: smsMasivos.php');
         }
@@ -39,7 +76,7 @@ function calcularCosto($lista, $userId)
     $stmt->bindParam(':usuario', $userId);
     $stmt->execute();
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $cuenta = count($result) * 18;
+    $cuenta = count($result) * 16;
     return $cuenta;
 }
 
@@ -59,7 +96,7 @@ function validarLista($lista, $userId)
     return true;
 }
 
-function envioMasivo($lista, $message_sms, $userId)
+function envioMasivo($lista, $message_sms, $userId,$saldo,$costo)
 {
     global $conn;
     $sql = 'SELECT cod_pais, celular FROM contactos WHERE lista=:lista AND usuario=:usuario';
@@ -67,14 +104,52 @@ function envioMasivo($lista, $message_sms, $userId)
     $stmt->bindParam(':lista', $lista);
     $stmt->bindParam(':usuario', $userId);
     $stmt->execute();
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if (!$result) {
         header('Location: smsMasivos.php');
     } else {
-        $contactos = array($result);
-        foreach($contactos as $contacto) {
+        $client = new Client([
+            'verify' => false,
+            // Base URI is used with relative requests
+            'base_uri' => 'https://api.cellvoz.co',
+            // You can set any number of default request options.
+        ]);
+        $response = $client->request(
+            'POST',
+            '/v2/auth/login',
+            [
+                'headers' => [],
+                'json' => ['account' => '00486640445', 'password' => "Lacroso12.."]
+
+            ]
+        );
+        $token= ( json_decode($response->getBody()->getContents())) ->token;
+        foreach($result as $contacto) {
+            $numero=$contacto['cod_pais'] . $contacto['celular'];
+            $response = $client->request(
+                'POST',
+                '/v2/sms/single',
+                [
+                    'headers' => ['Content-Type' => 'application/json','Authorization' => "Bearer " . $token, 'Api-Key' => 'f0aa1b80d5d1100f8e6688df829ed2d895f9399b'],
+                    'json' => ['number' => $numero, 'message' => $message_sms,"type"=>1]
+            
+                ]
+            );
+          
             //Verificar que tenga saldo y si no se redirecciona a la plataforma de pago
         }
+        $nuevo=$saldo-$costo;
+        $sql = 'UPDATE  usuarios set saldo=:nuevo WHERE ID=:user_id';
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->bindParam(':nuevo', $nuevo);
+        $stmt->execute();
+        echo "<script> 
+        localStorage.setItem('mensaje', 'Mensaje Enviado Sastifactoriamente');
+        </script>";
+        $archivoActual = 'smsMasivos.php';
+        header("refresh:0; url= $archivoActual");
+        return false;
     }
 } 
 ?>
@@ -90,10 +165,37 @@ function envioMasivo($lista, $message_sms, $userId)
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
     <title>Layout Empty - Vuexy - Bootstrap HTML admin template</title>
+
     <link rel="apple-touch-icon" href="../../app-assets/images/ico/apple-icon-120.png">
     <link rel="shortcut icon" type="image/x-icon" href="../../app-assets/images/ico/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
+    <style>
+           .lds-dual-ring {
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            }
+            .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+            }
+            @keyframes lds-dual-ring {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+            }
 
+            </style>
     <!-- BEGIN: Vendor CSS-->
     <link rel="stylesheet" type="text/css" href="../../app-assets/vendors/css/vendors.min.css">
     <link rel="stylesheet" type="text/css" href="../../app-assets/vendors/css/forms/select/select2.min.css">
@@ -106,7 +208,7 @@ function envioMasivo($lista, $message_sms, $userId)
     <link rel="stylesheet" type="text/css" href="../../app-assets/css/components.css">
     <link rel="stylesheet" type="text/css" href="../../app-assets/css/themes/dark-layout.css">
     <link rel="stylesheet" type="text/css" href="../../app-assets/css/themes/bordered-layout.css">
-
+   
     <!-- BEGIN: Page CSS-->
     <link rel="stylesheet" type="text/css" href="../../app-assets/css/core/menu/menu-types/vertical-menu.css">
     <!-- END: Page CSS-->
@@ -132,13 +234,15 @@ function envioMasivo($lista, $message_sms, $userId)
             <ul class="nav navbar-nav align-items-center ml-auto">
                 <li class="nav-item"><a class="nav-link d-flex align-items-center" style="cursor: default;"><i data-feather="dollar-sign"></i><span class="h4 m-0"><?= $result['saldo']; ?></span></a>
                 </li>
+               <li>  <a class="dropdown-item" href="../checkout/checkout.php"><i class="mr-50" data-feather="dollar-sign"></i> Recarga
+                        </a>
+                        </li>
                 <li class="nav-item d-none d-lg-block"><a class="nav-link nav-link-style"><i class="ficon" data-feather="moon"></i></a></li>
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="javascript:void(0);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <div class="user-nav d-sm-flex d-none"><span class="user-name font-weight-bolder">adrianlibra</span></div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown-user">
-                        <a class="dropdown-item" href="../checkout/checkout.php"><i class="mr-50" data-feather="dollar-sign"></i> Recarga
-                        </a>
+                        
                         <!-- <a class="dropdown-item" href="page-faq.html"><i class="mr-50" data-feather="help-circle"></i> FAQ
                         </a> -->
                         <a class="dropdown-item" href="../../logout/logout.php"><i class="mr-50" data-feather="power"></i> Logout
@@ -153,6 +257,7 @@ function envioMasivo($lista, $message_sms, $userId)
 
     <!-- BEGIN: Main Menu-->
     <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true">
+    
         <div class="navbar-header">
             <ul class="nav navbar-nav flex-row">
                 <li class="nav-item mr-auto"><a class="navbar-brand" href="../../html/ltr/vertical-menu-template/index.html"><span class="brand-logo">
@@ -205,6 +310,29 @@ function envioMasivo($lista, $message_sms, $userId)
 
     <!-- BEGIN: Content-->
     <div class="app-content content ">
+    <div id='load' class="loader loader-double is-active"></div>
+    <?php if (!empty($message)) : ?>
+            <!-- BEGIN: Custom modal -->
+            <div class="modal fade modal-danger" id="errorModal">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Error</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <?= $message; ?>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END: Custom modal -->
+        <?php endif; ?>
         <div class="content-overlay"></div>
         <div class="header-navbar-shadow"></div>
         <div class="content-wrapper">
@@ -279,6 +407,31 @@ function envioMasivo($lista, $message_sms, $userId)
                     width: 14,
                     height: 14
                 });
+            }
+            $('.loader').removeClass('is-active');
+            if (localStorage.getItem("mensaje")){
+                var mensaje = localStorage.getItem("mensaje");
+                Swal.fire({
+                position: 'top-end',
+                icon: 'success',
+                title: mensaje,
+                showConfirmButton: false,
+                timer: 1500
+                })
+
+                localStorage.removeItem("mensaje");
+            }
+            if (localStorage.getItem("error")){
+                var mensaje = localStorage.getItem("error");
+                Swal.fire({
+                position: 'top-end',
+                icon: 'error',
+                title: mensaje,
+                showConfirmButton: false,
+                timer: 1500
+                })
+
+                localStorage.removeItem("error");
             }
         });
     </script>

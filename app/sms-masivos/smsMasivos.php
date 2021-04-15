@@ -1,5 +1,15 @@
 <?php
 session_start();
+error_reporting(0);
+?>
+<script src="../../app-assets/vendors/js/extensions/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../app-assets/vendors/css/extensions/sweetalert2.min.css">
+
+<!-- Template files -->
+<link rel="stylesheet" type="text/css" href="../../app-assets/css/plugins/extensions/ext-component-sweet-alerts.css">
+<link rel="stylesheet" href="../../app-assets/css-loader-master/dist/css-loader.css">
+<div id='load' class="loader loader-double is-active"></div>
+<?php
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../login/login.php');
@@ -16,7 +26,9 @@ $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $message = '';
 $user_id = $_SESSION['user_id'];
-$sql = 'SELECT id_tabla, nombre_tabla_contactos FROM lista_contactos WHERE usuario=:user_id';
+$sql = 'SELECT l.id_tabla as id_tabla, l.nombre_tabla_contactos as nombre_tabla_contactos, count(C.id_contacto) as cantidad FROM lista_contactos l
+inner join contactos C on C.lista= l.id_tabla
+WHERE l.usuario=:user_id';
 $stmt = $conn->prepare($sql);
 $stmt->bindParam(':user_id', $user_id);
 $stmt->execute();
@@ -154,13 +166,15 @@ function messageValidation($message_sms)
             <ul class="nav navbar-nav align-items-center ml-auto">
                 <li class="nav-item"><a class="nav-link d-flex align-items-center" style="cursor: default;"><i data-feather="dollar-sign"></i><span class="h4 m-0"><?= $result['saldo']; ?></span></a>
                 </li>
+                <li><a class="dropdown-item" href="../checkout/checkout.php"><i class="mr-50" data-feather="dollar-sign"></i> Recarga
+                        </a>
+                        </li>
                 <li class="nav-item d-none d-lg-block"><a class="nav-link nav-link-style"><i class="ficon" data-feather="moon"></i></a></li>
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="javascript:void(0);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <div class="user-nav d-sm-flex d-none"><span class="user-name font-weight-bolder">adrianlibra</span></div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown-user">
-                        <a class="dropdown-item" href="../checkout/checkout.php"><i class="mr-50" data-feather="dollar-sign"></i> Recarga
-                        </a>
+   
                         <!-- <a class="dropdown-item" href="page-faq.html"><i class="mr-50" data-feather="help-circle"></i> FAQ
                         </a> -->
                         <a class="dropdown-item" href="../../logout/logout.php"><i class="mr-50" data-feather="power"></i> Logout
@@ -275,7 +289,46 @@ function messageValidation($message_sms)
                                 <div class="card-header">
                                     <h4 class="card-title">SMS</h4>
                                 </div>
+                                <div class="row">
+                                <div class="col-6">
+                                    <label class="container">Lista de contactos
+                                    <input type="radio" checked="checked" value='lt' name="radio">
+                                    <span class="checkmark"></span>
+                                    </label></div>
+                                <div class="col-6">
+                                    <label class="container">Archivo
+                                    <input type="radio" name="radio" value='ex'>
+                                    <span class="checkmark"></span>
+                                    </label>
+                                    </div>
+                                </div>
+                                
+                                    
                                 <div class="card-body">
+                                <div id="ar" style="display:none">
+                                <form class="form" action="enviarSmsExcel.php" method="post"
+                                        name="frmExcelImport" id="frmExcelImport" enctype="multipart/form-data">
+                                        <div class='row'>
+                                            <div class="col-md-6 col-12">
+                                            
+                                                <label>Elija Archivo Excel</label> 
+                                                <input class="form-control" type="file" name="file"
+                                                id="file" accept=".xls,.xlsx">
+                                            
+                                            </div>
+                                            <div class="col-md-6 col-12">
+                                            <br>
+                                            
+                                                 <button type="submit" id="submit" name="import"
+                                                    class="btn btn-primary mr-1">Continuar</button>
+                                            </div>
+                                         
+                                            <br><a href="../../ejemplo.xlsx" download="ejemplo.xlsx">Descargar archivo de ejemplo</a> <br>
+                                        </div>
+                                    
+                                    </form>
+                                </div>
+                                <div id="lista" style="display:block">
                                     <form class="form" action="smsMasivos.php" method="POST">
                                         <div class="row">
                                             <div class="col-md-6 col-12">
@@ -284,7 +337,7 @@ function messageValidation($message_sms)
                                                     <select class="select2-size-lg form-control basic-select" name="sms-list">
                                                         <option value="">Seleccione una lista de contactos...</option>
                                                         <?php foreach ($results as $result) : ?>
-                                                            <option value="<?= $result['id_tabla']; ?>"><?= $result['nombre_tabla_contactos']; ?></option>
+                                                            <option value="<?= $result['id_tabla']; ?>"><?= $result['nombre_tabla_contactos'] ; ?> <span style='color:green'> (<?= $result['cantidad'] ; ?>)</span> </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -302,6 +355,7 @@ function messageValidation($message_sms)
                                             </div>
                                         </div>
                                     </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -344,11 +398,25 @@ function messageValidation($message_sms)
                     height: 14
                 });
             }
+            $('.loader').removeClass('is-active');
+           
         });
     </script>
 
     <!-- BEGIN: Custom JS-->
     <script>
+        $('input[type=radio][name=radio]').change(function() {
+            if (this.value == 'lt') {
+                $('#ar').hide();
+                $('#lista').show();
+            }
+            else if (this.value == 'ex') {
+                
+                $('#ar').show();
+                $('#lista').hide();
+            }
+        });
+
         $(function() {
             // SHOW MODAL
             $('#errorModal').modal('show');

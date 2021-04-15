@@ -27,7 +27,10 @@ if (isset($_POST['sub_check'])) {
         $infoPago->buyerEmail = $result['email'];
         if (empty($infoPago->amount)) {
             throw new Exception("El formato tiene que ser numérico y no puede puede estar vacío");
+        } else if (($infoPago->amount<25000)) {
+            throw new Exception("El monto minimo de recarga es de $25,000.00");
         }
+        
         echo json_encode($infoPago);
     } catch (Exception $e) {
         $error = new stdClass();

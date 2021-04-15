@@ -1,6 +1,17 @@
 <?php
 session_start();
 
+?>
+<script src="../../app-assets/vendors/js/extensions/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../app-assets/vendors/css/extensions/sweetalert2.min.css">
+
+<!-- Template files -->
+<link rel="stylesheet" type="text/css" href="../../app-assets/css/plugins/extensions/ext-component-sweet-alerts.css">
+
+<link rel="stylesheet" href="../../app-assets/css-loader-master/dist/css-loader.css">
+<div id='load' class="loader loader-double is-active"></div>
+
+<?php
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../login/login.php');
 }
@@ -68,13 +79,14 @@ $result = $stmt->fetch(PDO::FETCH_ASSOC);
             <ul class="nav navbar-nav align-items-center ml-auto">
                 <li class="nav-item"><a class="nav-link d-flex align-items-center" style="cursor: default;"><i data-feather="dollar-sign"></i><span class="h4 m-0"><?= $result['saldo']; ?></span></a>
                 </li>
+                <li><a class="dropdown-item" href="../checkout/checkout.php"><i class="mr-50" data-feather="dollar-sign"></i> Recarga
+                        </a>
+                        </li>
                 <li class="nav-item d-none d-lg-block"><a class="nav-link nav-link-style"><i class="ficon" data-feather="moon"></i></a></li>
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="javascript:void(0);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <div class="user-nav d-sm-flex d-none"><span class="user-name font-weight-bolder">adrianlibra</span></div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown-user">
-                        <a class="dropdown-item" href="../checkout/checkout.php"><i class="mr-50" data-feather="dollar-sign"></i> Recarga
-                        </a>
                         <!-- <a class="dropdown-item" href="page-faq.html"><i class="mr-50" data-feather="help-circle"></i> FAQ
                         </a> -->
                         <a class="dropdown-item" href="../../logout/logout.php"><i class="mr-50" data-feather="power"></i> Logout
@@ -244,6 +256,7 @@ $result = $stmt->fetch(PDO::FETCH_ASSOC);
                     height: 14
                 });
             }
+            $('.loader').removeClass('is-active');
         });
     </script>
 
